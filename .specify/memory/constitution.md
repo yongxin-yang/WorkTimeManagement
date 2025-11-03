@@ -1,50 +1,60 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+同步影响报告
+- 版本变更：N/A → 1.0.0
+- 修改的原则列表：N/A → 已新增 5 条原则
+- 新增章节：附加约束与技术栈；开发流程与质量门；治理
+- 删除章节：无
+- 需要更新的模板：
+  - .specify/templates/plan-template.md 宪章检查 ✅ 已更新
+  - .specify/templates/spec-template.md ⚠ 保持通用，无需改动
+  - .specify/templates/tasks-template.md ⚠ 保持通用，含移动端路径约定
+- 保留占位符：无
+-->
 
-## Core Principles
+# WorkTime Manager 宪章
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+## 核心原则
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### 多平台一致性（Windows 与 Android）
+应用功能在 Windows 与 Android 上 MUST 等价：记录、编辑、统计（项目/天/月）在两端具备同等能力与数据模型；差异仅限 UI/交互层。
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### 核心数据优先与本地持久化
+时间记录与项目数据 MUST 以统一模型存储于本地（如 SQLite/文件），端侧可独立运行；同步/集成后续以合约扩展，不影响本地能力。
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### 统计即产品价值
+系统 MUST 提供按项目、按天、按月的可复核统计；统计来源于同一事件明细，聚合口径一致且可重算。
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### 可集成的边界与合约
+为未来对接工作服务系统，MUST 预留清晰边界：导入/导出接口与数据契约（版本化），任何外部集成不改变核心模型与离线能力。
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### 简单至上与最小依赖
+遵循最小可行实现与最少依赖；模块职责清晰，避免过度抽象；命令式 I/O、直接读写，后期再引入错误处理与增强。
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+## 附加约束与技术栈
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+- 目标平台：Windows（桌面，Powershell 友好）与 Android（移动端）
+- 数据：统一数据模型；本地优先；可选 SQLite 或文件（JSON/CSV）
+- 同步/集成：通过导入/导出与版本化契约对接；核心不依赖网络
+- 性能：统计与查询在 1 万记录规模下交互无明显卡顿
+- 架构：共享核心库 + 平台适配层；统计基于单一事件明细聚合
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+## 开发流程与质量门
 
-## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+- 阶段：结构搭建 → 核心函数实现 → 单文件/模块级测试 → 结构/功能优化 → 全量测试
+- 质量门（设计完成后与交付前各一次）：
+  - 多平台一致性：核心模型与用例在两端可复用或等价实现
+  - 统计可验证：明细→聚合的可重算性与对账用例
+  - 合约准备：导入/导出格式、版本字段、向后兼容策略
+  - 简单性：避免不必要依赖与抽象，职责单一
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+## 治理
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+- 宪章优先：与其他文档冲突时以本宪章为准
+- 修订流程：提交修订说明与影响评估；按语义化版本更新；更新依赖模板中的门禁/约束
+- 版本策略：
+  - MAJOR：删除/重定义原则或治理流程，或破坏性约束变更
+  - MINOR：新增或大幅扩展原则/章节
+  - PATCH：表述澄清，无语义变化
+- 合规：评审需对照“质量门”；发布前完成一次全量门禁复核
+
+**版本**：1.0.0 | **采纳日期**：2025-11-03 | **最近修订**：2025-11-03

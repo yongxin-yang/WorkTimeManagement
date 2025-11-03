@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-# Common PowerShell functions analogous to common.sh
+# 通用 PowerShell 函数（与 common.sh 对应）
 
 function Get-RepoRoot {
     try {
@@ -8,30 +8,30 @@ function Get-RepoRoot {
             return $result
         }
     } catch {
-        # Git command failed
+        # Git 命令失败
     }
     
-    # Fall back to script location for non-git repos
+    # 非 git 仓库：回退到脚本位置的上级
     return (Resolve-Path (Join-Path $PSScriptRoot "../../..")).Path
 }
 
 function Get-CurrentBranch {
-    # First check if SPECIFY_FEATURE environment variable is set
+    # 优先使用环境变量 SPECIFY_FEATURE
     if ($env:SPECIFY_FEATURE) {
         return $env:SPECIFY_FEATURE
     }
     
-    # Then check git if available
+    # 有 git 则读取当前分支
     try {
         $result = git rev-parse --abbrev-ref HEAD 2>$null
         if ($LASTEXITCODE -eq 0) {
             return $result
         }
     } catch {
-        # Git command failed
+        # Git 命令失败
     }
     
-    # For non-git repos, try to find the latest feature directory
+    # 非 git 仓库：尝试找到最新的特性目录
     $repoRoot = Get-RepoRoot
     $specsDir = Join-Path $repoRoot "specs"
     
@@ -54,7 +54,7 @@ function Get-CurrentBranch {
         }
     }
     
-    # Final fallback
+    # 最后回退
     return "main"
 }
 
@@ -73,15 +73,15 @@ function Test-FeatureBranch {
         [bool]$HasGit = $true
     )
     
-    # For non-git repos, we can't enforce branch naming but still provide output
+    # 非 git 仓库：无法强制分支命名，但仍输出提示
     if (-not $HasGit) {
-        Write-Warning "[specify] Warning: Git repository not detected; skipped branch validation"
+        Write-Warning "[specify] 警告：未检测到 Git 仓库；已跳过分支校验"
         return $true
     }
     
     if ($Branch -notmatch '^[0-9]{3}-') {
-        Write-Output "ERROR: Not on a feature branch. Current branch: $Branch"
-        Write-Output "Feature branches should be named like: 001-feature-name"
+        Write-Output "ERROR: 当前并非特性分支：$Branch"
+        Write-Output "特性分支命名格式应为：001-feature-name"
         return $false
     }
     return $true

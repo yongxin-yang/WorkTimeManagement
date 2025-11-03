@@ -1,177 +1,155 @@
 ---
-description: Identify underspecified areas in the current feature spec by asking up to 5 highly targeted clarification questions and encoding answers back into the spec.
+description: 通过提出不超过 5 个高度聚焦的问题，识别当前特性规范中的欠明确区域，并将答案编码回规范。
 ---
 
-## User Input
+## 用户输入
 
 ```text
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+在继续之前（若不为空），你必须考虑用户输入。
 
-## Outline
+## 概述
 
-Goal: Detect and reduce ambiguity or missing decision points in the active feature specification and record the clarifications directly in the spec file.
+目标：发现并减少当前特性规范中的歧义与缺失决策点，并将澄清内容直接记录入规范文件。
 
-Note: This clarification workflow is expected to run (and be completed) BEFORE invoking `/speckit.plan`. If the user explicitly states they are skipping clarification (e.g., exploratory spike), you may proceed, but must warn that downstream rework risk increases.
+说明：本澄清流程应在调用 `/speckit.plan` 之前运行并完成。若用户明确表示跳过澄清（如探索性 Spike），可继续，但需提示下游返工风险提升。
 
-Execution steps:
+## 执行步骤
 
-1. Run `.specify/scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly` from repo root **once** (combined `--json --paths-only` mode / `-Json -PathsOnly`). Parse minimal JSON payload fields:
-   - `FEATURE_DIR`
-   - `FEATURE_SPEC`
-   - (Optionally capture `IMPL_PLAN`, `TASKS` for future chained flows.)
-   - If JSON parsing fails, abort and instruct user to re-run `/speckit.specify` or verify feature branch environment.
-   - For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
+1. 在仓库根目录运行一次 `.specify/scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly`（组合 `--json --paths-only`），解析最小 JSON 字段：
+   - FEATURE_DIR
+   - FEATURE_SPEC
+   - （可选保存 IMPL_PLAN、TASKS 以便后续链式流程）
+   - 若解析失败，提示用户先运行 `/speckit.specify` 或检查特性分支环境。
+   - 参数中单引号转义：'I'\''m Groot'（或使用双引号）。
 
-2. Load the current spec file. Perform a structured ambiguity & coverage scan using this taxonomy. For each category, mark status: Clear / Partial / Missing. Produce an internal coverage map used for prioritization (do not output raw map unless no questions will be asked).
+2. 加载当前规范文件。按以下分类执行结构化歧义与覆盖扫描，对每类标记：清晰 / 部分 / 缺失，并生成内部覆盖图（除非不提问，否则不直接输出原始覆盖图）。
 
-   Functional Scope & Behavior:
-   - Core user goals & success criteria
-   - Explicit out-of-scope declarations
-   - User roles / personas differentiation
+   功能范围与行为：
+   - 核心用户目标与成功标准
+   - 明确的非目标/出界声明
+   - 用户角色/画像区分
 
-   Domain & Data Model:
-   - Entities, attributes, relationships
-   - Identity & uniqueness rules
-   - Lifecycle/state transitions
-   - Data volume / scale assumptions
+   领域与数据模型：
+   - 实体、属性、关系
+   - 标识与唯一性规则
+   - 生命周期/状态转移
+   - 数据量/规模假设
 
-   Interaction & UX Flow:
-   - Critical user journeys / sequences
-   - Error/empty/loading states
-   - Accessibility or localization notes
+   交互与 UX 流程：
+   - 关键用户旅程/序列
+   - 错误/空/加载状态
+   - 无障碍与本地化
 
-   Non-Functional Quality Attributes:
-   - Performance (latency, throughput targets)
-   - Scalability (horizontal/vertical, limits)
-   - Reliability & availability (uptime, recovery expectations)
-   - Observability (logging, metrics, tracing signals)
-   - Security & privacy (authN/Z, data protection, threat assumptions)
-   - Compliance / regulatory constraints (if any)
+   非功能质量属性：
+   - 性能（延迟、吞吐）
+   - 可扩展性（横向/纵向、上限）
+   - 可靠性与可用性（SLA、恢复期望）
+   - 可观测性（日志、指标、链路追踪）
+   - 安全与隐私（认证/授权、数据保护、威胁假设）
+   - 合规/监管约束
 
-   Integration & External Dependencies:
-   - External services/APIs and failure modes
-   - Data import/export formats
-   - Protocol/versioning assumptions
+   集成与外部依赖：
+   - 外部服务/API 与失败模式
+   - 数据导入/导出格式
+   - 协议/版本假设
 
-   Edge Cases & Failure Handling:
-   - Negative scenarios
-   - Rate limiting / throttling
-   - Conflict resolution (e.g., concurrent edits)
+   边界与失败处理：
+   - 负向场景
+   - 限流/节流
+   - 冲突解决（如并发编辑）
 
-   Constraints & Tradeoffs:
-   - Technical constraints (language, storage, hosting)
-   - Explicit tradeoffs or rejected alternatives
+   约束与权衡：
+   - 技术约束（语言、存储、托管）
+   - 明确权衡与被拒替代方案
 
-   Terminology & Consistency:
-   - Canonical glossary terms
-   - Avoided synonyms / deprecated terms
+   术语与一致性：
+   - 规范术语表
+   - 避免同义词/废弃术语
 
-   Completion Signals:
-   - Acceptance criteria testability
-   - Measurable Definition of Done style indicators
+   完成信号：
+   - 验收标准可测试性
+   - 可度量的 DoD 指示
 
-   Misc / Placeholders:
-   - TODO markers / unresolved decisions
-   - Ambiguous adjectives ("robust", "intuitive") lacking quantification
+   杂项/占位：
+   - TODO/未决
+   - 模糊形容词（“稳健”“直观”）缺少量化
 
-   For each category with Partial or Missing status, add a candidate question opportunity unless:
-   - Clarification would not materially change implementation or validation strategy
-   - Information is better deferred to planning phase (note internally)
+   对“部分/缺失”的类别生成候选提问，除非：
+   - 澄清不会实质改变实现或验证策略
+   - 信息更适合在规划阶段确定（内部备注）
 
-3. Generate (internally) a prioritized queue of candidate clarification questions (maximum 5). Do NOT output them all at once. Apply these constraints:
-    - Maximum of 10 total questions across the whole session.
-    - Each question must be answerable with EITHER:
-       - A short multiple‑choice selection (2–5 distinct, mutually exclusive options), OR
-       - A one-word / short‑phrase answer (explicitly constrain: "Answer in <=5 words").
-    - Only include questions whose answers materially impact architecture, data modeling, task decomposition, test design, UX behavior, operational readiness, or compliance validation.
-    - Ensure category coverage balance: attempt to cover the highest impact unresolved categories first; avoid asking two low-impact questions when a single high-impact area (e.g., security posture) is unresolved.
-    - Exclude questions already answered, trivial stylistic preferences, or plan-level execution details (unless blocking correctness).
-    - Favor clarifications that reduce downstream rework risk or prevent misaligned acceptance tests.
-    - If more than 5 categories remain unresolved, select the top 5 by (Impact * Uncertainty) heuristic.
+3. 内部生成候选澄清问题队列（最多 5 条）。不要一次性全部输出。约束：
+   - 全会话问题总数 ≤ 10
+   - 每题可用 2–5 个互斥选项 或 不超过 5 个词的短答
+   - 仅包含会实质影响架构、数据建模、任务拆分、测试设计、UX 行为、运维就绪或合规验证的问题
+   - 覆盖优先最高、影响最大、未解决的类别
+   - 排除已答、琐碎风格、纯计划层细节（除非阻塞正确性）
+   - 若>5 类未决，用（影响×不确定性）选前 5
 
-4. Sequential questioning loop (interactive):
-    - Present EXACTLY ONE question at a time.
-    - For multiple‑choice questions:
-       - **Analyze all options** and determine the **most suitable option** based on:
-          - Best practices for the project type
-          - Common patterns in similar implementations
-          - Risk reduction (security, performance, maintainability)
-          - Alignment with any explicit project goals or constraints visible in the spec
-       - Present your **recommended option prominently** at the top with clear reasoning (1-2 sentences explaining why this is the best choice).
-       - Format as: `**Recommended:** Option [X] - <reasoning>`
-       - Then render all options as a Markdown table:
+4. 交互式单题循环：
+   - 每次只呈现 1 个问题
+   - 多选题：给出“推荐选项（含 1–2 句理由）”，并渲染表：
 
-       | Option | Description |
-       |--------|-------------|
-       | A | <Option A description> |
-       | B | <Option B description> |
-       | C | <Option C description> (add D/E as needed up to 5) |
-       | Short | Provide a different short answer (<=5 words) (Include only if free-form alternative is appropriate) |
+     | Option | Description |
+     |--------|-------------|
+     | A | ... |
+     | B | ... |
+     | C | ... |
+     | Short | 不超过 5 个词的自由回答（仅当合适时） |
 
-       - After the table, add: `You can reply with the option letter (e.g., "A"), accept the recommendation by saying "yes" or "recommended", or provide your own short answer.`
-    - For short‑answer style (no meaningful discrete options):
-       - Provide your **suggested answer** based on best practices and context.
-       - Format as: `**Suggested:** <your proposed answer> - <brief reasoning>`
-       - Then output: `Format: Short answer (<=5 words). You can accept the suggestion by saying "yes" or "suggested", or provide your own answer.`
-    - After the user answers:
-       - If the user replies with "yes", "recommended", or "suggested", use your previously stated recommendation/suggestion as the answer.
-       - Otherwise, validate the answer maps to one option or fits the <=5 word constraint.
-       - If ambiguous, ask for a quick disambiguation (count still belongs to same question; do not advance).
-       - Once satisfactory, record it in working memory (do not yet write to disk) and move to the next queued question.
-    - Stop asking further questions when:
-       - All critical ambiguities resolved early (remaining queued items become unnecessary), OR
-       - User signals completion ("done", "good", "no more"), OR
-       - You reach 5 asked questions.
-    - Never reveal future queued questions in advance.
-    - If no valid questions exist at start, immediately report no critical ambiguities.
+     之后提示：可回复字母、输入“yes/recommended”接受推荐，或提供短答。
 
-5. Integration after EACH accepted answer (incremental update approach):
-    - Maintain in-memory representation of the spec (loaded once at start) plus the raw file contents.
-    - For the first integrated answer in this session:
-       - Ensure a `## Clarifications` section exists (create it just after the highest-level contextual/overview section per the spec template if missing).
-       - Under it, create (if not present) a `### Session YYYY-MM-DD` subheading for today.
-    - Append a bullet line immediately after acceptance: `- Q: <question> → A: <final answer>`.
-    - Then immediately apply the clarification to the most appropriate section(s):
-       - Functional ambiguity → Update or add a bullet in Functional Requirements.
-       - User interaction / actor distinction → Update User Stories or Actors subsection (if present) with clarified role, constraint, or scenario.
-       - Data shape / entities → Update Data Model (add fields, types, relationships) preserving ordering; note added constraints succinctly.
-       - Non-functional constraint → Add/modify measurable criteria in Non-Functional / Quality Attributes section (convert vague adjective to metric or explicit target).
-       - Edge case / negative flow → Add a new bullet under Edge Cases / Error Handling (or create such subsection if template provides placeholder for it).
-       - Terminology conflict → Normalize term across spec; retain original only if necessary by adding `(formerly referred to as "X")` once.
-    - If the clarification invalidates an earlier ambiguous statement, replace that statement instead of duplicating; leave no obsolete contradictory text.
-    - Save the spec file AFTER each integration to minimize risk of context loss (atomic overwrite).
-    - Preserve formatting: do not reorder unrelated sections; keep heading hierarchy intact.
-    - Keep each inserted clarification minimal and testable (avoid narrative drift).
+   - 短答题：给出“建议答案（含简短理由）”，提示“<=5 词，可输入 yes/suggested 接受”。
 
-6. Validation (performed after EACH write plus final pass):
-   - Clarifications session contains exactly one bullet per accepted answer (no duplicates).
-   - Total asked (accepted) questions ≤ 5.
-   - Updated sections contain no lingering vague placeholders the new answer was meant to resolve.
-   - No contradictory earlier statement remains (scan for now-invalid alternative choices removed).
-   - Markdown structure valid; only allowed new headings: `## Clarifications`, `### Session YYYY-MM-DD`.
-   - Terminology consistency: same canonical term used across all updated sections.
+   - 用户回答后：
+     - 若为 yes/recommended/suggested，则采用推荐/建议
+     - 否则校验是否对应选项或满足短答长度；若含糊则快速澄清（不计新题）
+     - 记录于工作内存，然后进入下一题
+   - 终止条件：关键歧义已解、用户停止、或达到 5 题
+   - 若无有效问题，立即报告“无关键歧义”
 
-7. Write the updated spec back to `FEATURE_SPEC`.
+5. 每个答案集成后立即更新规范（增量方式）：
+   - 首次集成：确保存在 `## Clarifications`，并添加 `### Session YYYY-MM-DD`
+   - 追加一行：`- Q: <问题> → A: <答案>`
+   - 同步到最合适章节：
+     - 功能歧义 → 功能需求
+     - 角色/交互 → 用户故事/角色
+     - 数据形态 → 数据模型（字段、类型、关系、约束）
+     - 非功能约束 → 非功能/质量属性（将模糊词改为指标）
+     - 边界/异常 → 边界/错误处理
+     - 术语冲突 → 全文规范化（必要时保留一次“原称”注）
+   - 若答案使旧语句失效，应直接替换而非重复
+   - 每次写入后保存，保留格式与层级
+   - 插入内容保持最小与可测试
 
-8. Report completion (after questioning loop ends or early termination):
-   - Number of questions asked & answered.
-   - Path to updated spec.
-   - Sections touched (list names).
-   - Coverage summary table listing each taxonomy category with Status: Resolved (was Partial/Missing and addressed), Deferred (exceeds question quota or better suited for planning), Clear (already sufficient), Outstanding (still Partial/Missing but low impact).
-   - If any Outstanding or Deferred remain, recommend whether to proceed to `/speckit.plan` or run `/speckit.clarify` again later post-plan.
-   - Suggested next command.
+6. 校验（每次写入后与最终）：
+   - 每个已接收答案对应且仅对应一条澄清记录
+   - 提问总数 ≤ 5
+   - 已更新章节不再保留相关的模糊/占位
+   - 消除矛盾陈述
+   - Markdown 结构有效，仅新增“## Clarifications”“### Session YYYY-MM-DD”
+   - 术语一致
 
-Behavior rules:
+7. 将更新写回 FEATURE_SPEC。
 
-- If no meaningful ambiguities found (or all potential questions would be low-impact), respond: "No critical ambiguities detected worth formal clarification." and suggest proceeding.
-- If spec file missing, instruct user to run `/speckit.specify` first (do not create a new spec here).
-- Never exceed 5 total asked questions (clarification retries for a single question do not count as new questions).
-- Avoid speculative tech stack questions unless the absence blocks functional clarity.
-- Respect user early termination signals ("stop", "done", "proceed").
-- If no questions asked due to full coverage, output a compact coverage summary (all categories Clear) then suggest advancing.
-- If quota reached with unresolved high-impact categories remaining, explicitly flag them under Deferred with rationale.
+8. 完成报告：
+   - 问题数量（已问/已答）
+   - 规范路径
+   - 触及的章节
+   - 覆盖概要表（各分类状态：Resolved/Deferred/Clear/Outstanding）
+   - 对 Outstanding/Deferred 的建议：继续 `/speckit.plan` 或稍后再澄清
+   - 建议下一步命令
 
-Context for prioritization: $ARGUMENTS
+行为规则：
+- 无关键歧义则报告并建议继续
+- 缺规范文件则提示先运行 `/speckit.specify`
+- 不超过 5 题（同题澄清不计入）
+- 避免无根据的技术栈提问，除非阻塞功能清晰度
+- 尊重用户提前结束
+- 若覆盖充分且未提问，输出简洁覆盖总结并建议推进
+- 若额度用尽仍有高影响未决，标记为 Deferred 并说明理由
+
+优先级上下文：$ARGUMENTS
