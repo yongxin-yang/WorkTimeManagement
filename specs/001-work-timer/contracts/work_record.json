@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "工作记录",
+  "description": "代表一段时间的记录",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "记录 ID，主键"
+    },
+    "task_id": {
+      "type": "integer",
+      "description": "关联的任务 ID"
+    },
+    "start_time": {
+      "type": "integer",
+      "description": "开始时间（Unix 时间戳，秒）"
+    },
+    "end_time": {
+      "type": ["integer", "null"],
+      "description": "结束时间（Unix 时间戳，秒），进行中记录为 null"
+    },
+    "duration": {
+      "type": ["integer", "null"],
+      "description": "持续时间（秒），进行中记录为 null"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["进行中", "已完成", "已中断"],
+      "description": "记录状态"
+    },
+    "created_at": {
+      "type": "integer",
+      "description": "创建时间（Unix 时间戳，秒）"
+    },
+    "updated_at": {
+      "type": "integer",
+      "description": "更新时间（Unix 时间戳，秒）"
+    }
+  },
+  "required": ["id", "task_id", "start_time", "status", "created_at", "updated_at"],
+  "version": "1.0.0"
+}
+

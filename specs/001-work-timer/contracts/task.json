@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "任务",
+  "description": "代表一个可记录时间的类别",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "任务 ID，主键"
+    },
+    "name": {
+      "type": "string",
+      "description": "任务名称",
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "created_at": {
+      "type": "integer",
+      "description": "创建时间（Unix 时间戳，秒）"
+    },
+    "is_default": {
+      "type": "boolean",
+      "description": "是否为默认任务（工作/摸鱼）",
+      "default": false
+    },
+    "is_deletable": {
+      "type": "boolean",
+      "description": "是否可删除",
+      "default": true
+    }
+  },
+  "required": ["id", "name", "created_at", "is_default", "is_deletable"],
+  "version": "1.0.0"
+}
+
