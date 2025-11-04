@@ -1,22 +1,26 @@
 <!--
 同步影响报告
-- 版本变更：N/A → 1.0.0
-- 修改的原则列表：N/A → 已新增 5 条原则
-- 新增章节：附加约束与技术栈；开发流程与质量门；治理
+- 版本变更：2.0.0 → 2.1.0
+- 修改的原则列表：
+  - Windows 桌面端（PySide6） → Windows 桌面端（PySide6）与 Android 支持
+- 新增章节：无
 - 删除章节：无
 - 需要更新的模板：
   - .specify/templates/plan-template.md 宪章检查 ✅ 已更新
-  - .specify/templates/spec-template.md ⚠ 保持通用，无需改动
-  - .specify/templates/tasks-template.md ⚠ 保持通用，含移动端路径约定
+  - .specify/templates/spec-template.md ✅ 无需改动
+  - .specify/templates/tasks-template.md ✅ 无需改动
 - 保留占位符：无
 -->
-
 # WorkTime Manager 宪章
 
 ## 核心原则
 
-### 多平台一致性（Windows 与 Android）
-应用功能在 Windows 与 Android 上 MUST 等价：记录、编辑、统计（项目/天/月）在两端具备同等能力与数据模型；差异仅限 UI/交互层。
+### 文档语言
+所有文档均用中文书写
+代码注释可使用英文
+
+### Windows 桌面端（PySide6）与 Android 支持
+Windows 端 MUST 以 PySide6 构建窗口与界面；Android 端 MUST 提供等价能力（记录、编辑、统计），技术栈由本项目自定并在计划/规范中细化；两端数据模型一致，差异仅限 UI/交互层。
 
 ### 核心数据优先与本地持久化
 时间记录与项目数据 MUST 以统一模型存储于本地（如 SQLite/文件），端侧可独立运行；同步/集成后续以合约扩展，不影响本地能力。
@@ -32,11 +36,13 @@
 
 ## 附加约束与技术栈
 
-- 目标平台：Windows（桌面，Powershell 友好）与 Android（移动端）
-- 数据：统一数据模型；本地优先；可选 SQLite 或文件（JSON/CSV）
+- 目标平台：Windows 桌面（Powershell 友好）、Android（移动端）
+- 语言/版本：Python（建议 3.11+，Windows）；Kotlin（建议 1.9+，Android）
+- GUI/UI：PySide6（Qt for Python，Windows）；Jetpack Compose（Android）
+- 数据：统一数据模型；本地优先；SQLite（Room on Android）或文件（JSON/CSV）
 - 同步/集成：通过导入/导出与版本化契约对接；核心不依赖网络
-- 性能：统计与查询在 1 万记录规模下交互无明显卡顿
-- 架构：共享核心库 + 平台适配层；统计基于单一事件明细聚合
+- 性能：统计与查询在 1 万记录规模下交互无明显卡顿（两端同口径）
+- 架构：共享数据契约与聚合口径；Windows 为 PySide6 UI + 核心库；Android 为 Compose UI + 本地数据层（Room+Coroutines/Hilt 可选）
 
 ## 开发流程与质量门
 
@@ -57,4 +63,4 @@
   - PATCH：表述澄清，无语义变化
 - 合规：评审需对照“质量门”；发布前完成一次全量门禁复核
 
-**版本**：1.0.0 | **采纳日期**：2025-11-03 | **最近修订**：2025-11-03
+**版本**：2.1.0 | **采纳日期**：2025-11-03 | **最近修订**：2025-11-03
