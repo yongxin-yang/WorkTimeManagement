@@ -37,6 +37,7 @@
 **属性**：
 - `id`：整数，主键，自增
 - `task_id`：整数，外键，关联任务表，非空
+- `session_id`：整数，工作周期 ID（用于甘特图展示，标识属于同一工作周期的记录），非空
 - `start_time`：时间戳，开始时间，非空
 - `end_time`：时间戳，结束时间，可为空（进行中的记录）
 - `duration`：整数，持续时间（秒），可为空（进行中的记录）
@@ -58,6 +59,7 @@
 **索引**：
 - `idx_work_record_task_time`：task_id, start_time（用于统计查询）
 - `idx_work_record_status`：status（用于查找未完成记录）
+- `idx_work_record_session`：session_id, start_time（用于工作周期查询和甘特图展示）
 
 ### 3. 时间统计（TimeStatistics）
 
@@ -77,6 +79,30 @@
 - 周维度：按周开始日期 + 任务聚合，`SUM(duration) WHERE WEEK(start_time) = week_start`
 - 月维度：按月份 + 任务聚合，`SUM(duration) WHERE YEAR(start_time) = year AND MONTH(start_time) = month`
 - 占比计算：`percentage = (task_duration / total_duration) * 100`
+
+**数据来源**：基于工作记录明细聚合，可重算（符合宪章要求）
+
+### 4. 工作周期视图（WorkSessionView）
+
+**描述**：用于甘特图展示的单个工作周期视图，展示一个完整工作周期内多个工作的执行和切换。此为视图/查询结果，不持久化存储。
+
+**属性**（查询结果）：
+- `session_id`：整数，工作周期 ID（基于开始时间生成的唯一标识）
+- `session_start`：时间戳，工作周期开始时间（第一个工作记录的 start_time）
+- `session_end`：时间戳，工作周期结束时间（最后一个工作记录的 end_time）
+- `work_records`：数组，该周期内的所有工作记录（按时间顺序）
+  - `record_id`：整数，工作记录 ID
+  - `task_id`：整数，任务 ID
+  - `task_name`：字符串，任务名称
+  - `start_time`：时间戳，开始时间
+  - `end_time`：时间戳，结束时间
+  - `duration`：整数，持续时间（秒）
+
+**聚合规则**：
+- 工作周期识别：从用户点击"开始"到用户点击"结束"之间的所有工作记录属于一个工作周期，通过 `session_id` 字段关联
+- 工作记录按 `start_time` 排序
+- 甘特图展示：以时间轴为横轴，任务为纵轴，展示每个工作记录的时间段
+- 查询方式：`SELECT * FROM work_records WHERE session_id = ? ORDER BY start_time ASC`
 
 **数据来源**：基于工作记录明细聚合，可重算（符合宪章要求）
 
@@ -118,6 +144,7 @@ class RecordStatus(str, Enum):
 class WorkRecord(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     task_id: int = Field(foreign_key="task.id")
+    session_id: int = Field(index=True)  # 工作周期 ID，用于甘特图展示
     start_time: int
     end_time: Optional[int] = None
     duration: Optional[int] = None
@@ -192,7 +219,8 @@ data class Task(
     ],
     indices = [
         Index(value = ["task_id", "start_time"]),
-        Index(value = ["status"])
+        Index(value = ["status"]),
+        Index(value = ["session_id", "start_time"])  // 用于工作周期查询和甘特图展示
     ]
 )
 data class WorkRecord(
@@ -200,6 +228,8 @@ data class WorkRecord(
     val id: Long = 0,
     @ColumnInfo(name = "task_id")
     val taskId: Long,
+    @ColumnInfo(name = "session_id")
+    val sessionId: Long,  // 工作周期 ID，用于甘特图展示
     @ColumnInfo(name = "start_time")
     val startTime: Long,
     @ColumnInfo(name = "end_time")
@@ -225,7 +255,7 @@ enum class RecordStatus {
 
 ### 任务校验
 - 名称不能为空
-- 名称长度 ≤ 50 字符
+- 名称长度限制：英文字符不超过50个，中文字符不超过20个
 - 默认任务名称必须为"工作"或"摸鱼"
 - 删除任务时，检查是否有关联的工作记录（如有则禁止删除，除非转移记录）
 
@@ -296,5 +326,6 @@ enum class RecordStatus {
 ### 导入格式
 
 - 支持 JSON 导入（任务 + 工作记录）
+- 支持 CSV 导入（工作记录的时间序列数据）
 - 版本字段：支持向后兼容（数据契约版本号）
 
